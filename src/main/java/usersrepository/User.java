@@ -2,6 +2,7 @@ package usersrepository;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 public class User {
@@ -36,22 +37,22 @@ public class User {
     }
 
     public static User getUserByName(EntityManager entityManager, String name) {
-
-        //String queryStr = "select id,name, email from user where id = ?1";
-        // sample exploit: a' OR 1=1 LIMIT 1 --
-        String queryStr = "SELECT id, name, email FROM user WHERE name LIKE '%" + name + "%' LIMIT 1";
+        name = "%" + name + "%";
+        //String queryStr = "select u from User u where u.name LIKE ?1";
+        // sample exploit: b' OR u.name LIKE '%25m%25
+        String queryStr = "SELECT u FROM User u WHERE u.name LIKE '" + name + "'";
         try {
-            Query query = entityManager.createNativeQuery(queryStr);
-            //query.setParameter(1, rollNo);
+            TypedQuery<User> query = entityManager.createQuery(queryStr, User.class);
+            //TypedQuery<User> query = entityManager.createQuery(queryStr, User.class);
+            //query.setParameter(1, name);
 
-            Object[] columns = (Object[]) query.getSingleResult();
+            List<User> users = query.getResultList();
 
-            User user = new User();
-            user.setId((BigDecimal) columns[0]);
-            user.setName((String)columns[1]);
-            user.setEmail((String)columns[2]);
-
-            return user;
+            if(users.size() > 0) {
+                return users.get(0);
+            } else {
+                return new User();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
